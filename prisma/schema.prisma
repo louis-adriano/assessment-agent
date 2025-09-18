@@ -1,0 +1,141 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  COURSE_ADMIN
+  STUDENT
+}
+
+enum SubmissionType {
+  DOCUMENT
+  GITHUB_REPO
+  WEBSITE
+  TEXT
+}
+
+enum SubmissionStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      Role     @default(STUDENT)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  courses         Course[]           @relation("CourseAdmin")
+  enrollments     CourseEnrollment[]
+  submissions     Submission[]
+  createdCourses  Course[]           @relation("CreatedBy")
+  createdQuestions Question[]        @relation("CreatedBy")
+
+  @@map("users")
+}
+
+model Course {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  adminId     String
+  admin       User                @relation("CourseAdmin", fields: [adminId], references: [id])
+  createdById String
+  createdBy   User                @relation("CreatedBy", fields: [createdById], references: [id])
+  questions   Question[]
+  enrollments CourseEnrollment[]
+
+  @@map("courses")
+}
+
+model CourseEnrollment {
+  id         String   @id @default(cuid())
+  courseId   String
+  studentId  String
+  enrolledAt DateTime @default(now())
+
+  // Relations
+  course  Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  student User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, studentId])
+  @@map("course_enrollments")
+}
+
+model Question {
+  id             String         @id @default(cuid())
+  title          String
+  description    String
+  submissionType SubmissionType
+  criteria       String?
+  isActive       Boolean        @default(true)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  // Relations
+  courseId    String
+  course      Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  createdById String
+  createdBy   User         @relation("CreatedBy", fields: [createdById], references: [id])
+  baseExample BaseExample?
+  submissions Submission[]
+
+  @@map("questions")
+}
+
+model BaseExample {
+  id          String         @id @default(cuid())
+  content     String
+  type        SubmissionType
+  fileUrl     String?
+  metadata    Json?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  // Relations
+  questionId String   @unique
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@map("base_examples")
+}
+
+model Submission {
+  id          String           @id @default(cuid())
+  content     String?
+  fileUrl     String?
+  websiteUrl  String?
+  githubUrl   String?
+  status      SubmissionStatus @default(PENDING)
+  submittedAt DateTime         @default(now())
+  processedAt DateTime?
+
+  // Assessment Results
+  score           Float?
+  feedback        String?
+  confidence      Float?
+  comparisonData  Json?
+
+  // Relations
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  studentId  String
+  student    User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@map("submissions")
+}
