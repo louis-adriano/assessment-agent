@@ -6,7 +6,9 @@
       "Bash(npx prisma:*)",
       "Bash(npm run dev:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Read(//c/Users/louad/OneDrive/Desktop/**)",
+      "Bash(npm run:*)"
     ],
     "deny": [],
     "ask": []

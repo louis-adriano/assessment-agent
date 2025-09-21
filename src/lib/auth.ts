@@ -1,8 +1,9 @@
-import { auth } from "next-auth"
-import { Role } from "@prisma/client"
+import { getServerSession } from "next-auth"
+import { authOptions } from "./auth-config"
+import { UserRole } from "@prisma/client"
 
 export async function getCurrentUser() {
-  const session = await auth()
+  const session = await getServerSession(authOptions)
   return session?.user
 }
 
@@ -14,18 +15,18 @@ export async function requireAuth() {
   return user
 }
 
-export async function requireRole(allowedRoles: Role[]) {
+export async function requireRole(allowedRoles: UserRole[]) {
   const user = await requireAuth()
-  if (!user.role || !allowedRoles.includes(user.role as Role)) {
+  if (!user.role || !allowedRoles.includes(user.role as UserRole)) {
     throw new Error("Insufficient permissions")
   }
   return user
 }
 
 export async function requireSuperAdmin() {
-  return requireRole([Role.SUPER_ADMIN])
+  return requireRole([UserRole.SUPER_ADMIN])
 }
 
 export async function requireAdmin() {
-  return requireRole([Role.SUPER_ADMIN, Role.COURSE_ADMIN])
+  return requireRole([UserRole.SUPER_ADMIN, UserRole.COURSE_ADMIN])
 }

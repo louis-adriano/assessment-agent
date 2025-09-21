@@ -1,27 +1,26 @@
-import { Role, SubmissionType, SubmissionStatus } from '@prisma/client'
+import { UserRole, SubmissionType, Remark } from '@prisma/client'
 
 export interface User {
   id: string
   email: string
   name?: string | null
-  role: Role
+  role: UserRole
   createdAt: Date
   updatedAt: Date
 }
 
 export interface Course {
   id: string
-  title: string
-  description?: string | null
+  name: string
+  description: string
   isActive: boolean
   createdAt: Date
   updatedAt: Date
-  adminId: string
-  createdById: string
-  admin?: Pick<User, 'id' | 'name' | 'email'>
-  createdBy?: Pick<User, 'id' | 'name' | 'email'>
+  createdBy: string
+  createdByUser?: Pick<User, 'id' | 'name' | 'email'>
   questions?: Question[]
-  enrollments?: CourseEnrollment[]
+  enrollments?: Enrollment[]
+  courseAdmins?: CourseAdmin[]
   _count?: {
     questions: number
     enrollments: number
@@ -79,13 +78,23 @@ export interface Submission {
   student?: Pick<User, 'id' | 'name' | 'email'>
 }
 
-export interface CourseEnrollment {
+export interface Enrollment {
   id: string
+  userId: string
   courseId: string
-  studentId: string
   enrolledAt: Date
+  isActive: boolean
+  user?: Pick<User, 'id' | 'name' | 'email'>
   course?: Course
-  student?: Pick<User, 'id' | 'name' | 'email'>
+}
+
+export interface CourseAdmin {
+  id: string
+  userId: string
+  courseId: string
+  createdAt: Date
+  user?: Pick<User, 'id' | 'name' | 'email'>
+  course?: Course
 }
 
 // API Response types
@@ -97,17 +106,15 @@ export interface ActionResult<T = any> {
 
 // Form validation types
 export interface CreateCourseData {
-  title: string
-  description?: string
-  adminId?: string
+  name: string
+  description: string
 }
 
 export interface UpdateCourseData {
   id: string
-  title?: string
+  name?: string
   description?: string
   isActive?: boolean
-  adminId?: string
 }
 
 export interface CreateQuestionData {
