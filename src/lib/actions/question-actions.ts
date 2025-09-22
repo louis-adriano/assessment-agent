@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/db'
 import { requireAuth, requireAdmin } from '@/lib/auth'
-import { Role, SubmissionType } from '@prisma/client'
+import { UserUserRole, SubmissionType } from '@prisma/client'
 
 const createQuestionSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200),
@@ -61,7 +61,7 @@ export async function createQuestion(data: z.infer<typeof createQuestionSchema>)
     }
 
     // SUPER_ADMIN can create questions for any course, COURSE_ADMIN only for their courses
-    if (user.role === Role.COURSE_ADMIN && course.adminId !== user.id) {
+    if (user.role === UserRole.COURSE_ADMIN && course.adminId !== user.id) {
       return { success: false, error: 'Insufficient permissions' }
     }
 
@@ -120,7 +120,7 @@ export async function updateQuestion(data: z.infer<typeof updateQuestionSchema>)
     }
 
     // SUPER_ADMIN can update any question, COURSE_ADMIN only their course questions
-    if (user.role === Role.COURSE_ADMIN && existingQuestion.course.adminId !== user.id) {
+    if (user.role === UserRole.COURSE_ADMIN && existingQuestion.course.adminId !== user.id) {
       return { success: false, error: 'Insufficient permissions' }
     }
 
@@ -175,7 +175,7 @@ export async function deleteQuestion(questionId: string): Promise<ActionResult> 
     }
 
     // SUPER_ADMIN can delete any question, COURSE_ADMIN only their course questions
-    if (user.role === Role.COURSE_ADMIN && existingQuestion.course.adminId !== user.id) {
+    if (user.role === UserRole.COURSE_ADMIN && existingQuestion.course.adminId !== user.id) {
       return { success: false, error: 'Insufficient permissions' }
     }
 
@@ -219,9 +219,9 @@ export async function getQuestions(courseId?: string): Promise<ActionResult> {
       }
 
       const hasAccess = 
-        user.role === Role.SUPER_ADMIN ||
-        (user.role === Role.COURSE_ADMIN && course.adminId === user.id) ||
-        (user.role === Role.STUDENT && course.enrollments.length > 0)
+        user.role === UserRole.SUPER_ADMIN ||
+        (user.role === UserRole.COURSE_ADMIN && course.adminId === user.id) ||
+        (user.role === UserRole.STUDENT && course.enrollments.length > 0)
 
       if (!hasAccess) {
         return { success: false, error: 'Insufficient permissions' }
@@ -229,8 +229,8 @@ export async function getQuestions(courseId?: string): Promise<ActionResult> {
 
       whereClause.courseId = courseId
     } else {
-      // Role-based filtering for all questions
-      if (user.role === Role.STUDENT) {
+      // UserRole-based filtering for all questions
+      if (user.role === UserRole.STUDENT) {
         whereClause.course = {
           enrollments: {
             some: {
@@ -238,7 +238,7 @@ export async function getQuestions(courseId?: string): Promise<ActionResult> {
             }
           }
         }
-      } else if (user.role === Role.COURSE_ADMIN) {
+      } else if (user.role === UserRole.COURSE_ADMIN) {
         whereClause.course = {
           adminId: user.id
         }
@@ -296,7 +296,7 @@ export async function getQuestion(questionId: string): Promise<ActionResult> {
         },
         baseExample: true,
         submissions: {
-          where: user.role === Role.STUDENT ? { studentId: user.id } : {},
+          where: user.role === UserRole.STUDENT ? { studentId: user.id } : {},
           include: {
             student: {
               select: { id: true, name: true, email: true }
@@ -316,9 +316,9 @@ export async function getQuestion(questionId: string): Promise<ActionResult> {
 
     // Permission check
     const hasAccess = 
-      user.role === Role.SUPER_ADMIN ||
-      (user.role === Role.COURSE_ADMIN && question.course.adminId === user.id) ||
-      (user.role === Role.STUDENT && question.course.enrollments.length > 0)
+      user.role === UserRole.SUPER_ADMIN ||
+      (user.role === UserRole.COURSE_ADMIN && question.course.adminId === user.id) ||
+      (user.role === UserRole.STUDENT && question.course.enrollments.length > 0)
 
     if (!hasAccess) {
       return { success: false, error: 'Insufficient permissions' }
@@ -357,7 +357,7 @@ export async function createBaseExample(data: z.infer<typeof createBaseExampleSc
     }
 
     // SUPER_ADMIN can create base examples for any question, COURSE_ADMIN only for their course questions
-    if (user.role === Role.COURSE_ADMIN && question.course.adminId !== user.id) {
+    if (user.role === UserRole.COURSE_ADMIN && question.course.adminId !== user.id) {
       return { success: false, error: 'Insufficient permissions' }
     }
 
@@ -417,7 +417,7 @@ export async function updateBaseExample(data: z.infer<typeof updateBaseExampleSc
     }
 
     // SUPER_ADMIN can update any base example, COURSE_ADMIN only their course base examples
-    if (user.role === Role.COURSE_ADMIN && existingBaseExample.question.course.adminId !== user.id) {
+    if (user.role === UserRole.COURSE_ADMIN && existingBaseExample.question.course.adminId !== user.id) {
       return { success: false, error: 'Insufficient permissions' }
     }
 
@@ -468,7 +468,7 @@ export async function deleteBaseExample(baseExampleId: string): Promise<ActionRe
     }
 
     // SUPER_ADMIN can delete any base example, COURSE_ADMIN only their course base examples
-    if (user.role === Role.COURSE_ADMIN && existingBaseExample.question.course.adminId !== user.id) {
+    if (user.role === UserRole.COURSE_ADMIN && existingBaseExample.question.course.adminId !== user.id) {
       return { success: false, error: 'Insufficient permissions' }
     }
 

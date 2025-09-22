@@ -1,4 +1,4 @@
-'use server'
+// Base example comparison engine
 
 import { SubmissionType } from '@prisma/client'
 import { assessSubmission, LLMComplexity } from './llm-service'

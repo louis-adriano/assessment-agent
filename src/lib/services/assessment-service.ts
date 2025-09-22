@@ -1,4 +1,4 @@
-'use server'
+// Assessment service with server actions
 
 import { prisma } from '@/lib/db'
 import {
